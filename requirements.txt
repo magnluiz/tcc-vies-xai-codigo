@@ -1,0 +1,12 @@
+# Python 3.12. O PyTorch com CUDA vem do índice do PyTorch, não do PyPI:
+#   pip install "torch==2.14.1+cu132" "torchvision==0.29.1+cu132" --index-url https://download.pytorch.org/whl/cu132
+torch==2.14.1
+torchvision==0.29.1
+numpy==2.5.3
+pandas==3.0.6
+scipy==1.18.1
+scikit-learn==1.9.1
+matplotlib==3.11.2
+Pillow==12.3.0
+opencv-python-headless==5.0.0
+torchxrayvision==1.5.7

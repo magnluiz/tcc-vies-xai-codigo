@@ -1,0 +1,13 @@
+# Ambiente
+.venv/
+__pycache__/
+*.pyc
+
+# Dados e resultados (dezenas de GB; obter conforme o README)
+dataset/
+
+# Pesos e arrays grandes, caso algum seja salvo fora de dataset/
+*.pt
+*.pth
+*.npy
+*.npz

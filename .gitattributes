@@ -1,0 +1,4 @@
+# Fins de linha LF em todo o repositório
+* text=auto eol=lf
+# Fichas de protocolo: bytes exatos (o SHA-256 delas está registrado)
+protocolo/** -text
