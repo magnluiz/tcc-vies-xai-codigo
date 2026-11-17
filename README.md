@@ -36,7 +36,9 @@ Em ambas, o modelo é uma **ResNet-18** pré-treinada no ImageNet. As explicaç�
 │   ├── ficha_protocolo_experimental.md       PAD-UFES-20
 │   └── ficha_protocolo_experimental_nih.md   NIH ChestX-ray14
 └── anotacoes/
-    └── anotacao_marcas_caneta.csv            anotação visual das marcas de caneta (PAD-UFES-20)
+    ├── anotacao_marcas_caneta.csv            anotação visual das marcas de caneta (PAD-UFES-20)
+    ├── conferencia_marcas_caneta.csv         conferência às cegas pelo autor (717 imagens)
+    └── concordancia_marcas_caneta.json       resultado da conferência (passo 15, analisar)
 ```
 
 **Não estão no repositório:** os dados, os caches, os resultados (pasta `dataset/`, dezenas de GB) e os pesos dos modelos. Os dados são públicos e abertos; a seção 4.1 e a seção 5.1 explicam como obtê-los.
@@ -141,7 +143,7 @@ Rodar na ordem; cada passo usa o que o anterior gerou. Caminhos de saída relati
 | 12 | `gradcam_pad_ufes.py` | Grad-CAM no modelo final + sanidade (randomização em cascata e rótulos embaralhados) | `final_principal/gradcam/` | **sim** | minutos |
 | 13 | `artefato_sintetico_pad_ufes.py` | Quadrado verde correlacionado com NEV, 4 níveis de *q* × 5 sementes; dependência real × sinal do Grad-CAM e do IG | `experimentos_v1/artefato_sintetico/` | **sim** | ~1 h |
 | 14 | `marcas_caneta_pad_ufes.py --raio-central 56` | Marcas de caneta reais: apaga a tinta por *inpainting* e mede a mudança na predição, com controle placebo | `marcas_caneta/experimento_fora_do_centro_r56/` | **sim** | minutos |
-| 15 | `revisao_marcas_caneta_pad_ufes.py gerar` → `... analisar <csv>` | Conferência manual da anotação: página HTML local com 717 imagens às cegas (teclas S/N/D, exporta CSV); depois calcula concordância, kappa e precisão da anotação original | `marcas_caneta/revisao/revisar.html`, `amostra_revisao.csv`, `concordancia.json` | não | — |
+| 15 | `revisao_marcas_caneta_pad_ufes.py gerar` → `... analisar <csv>` | Conferência manual da anotação: página HTML local às cegas (padrão: 50 por rótulo + 15 repetidas para medir a consistência do revisor; teclas S/N/D, exporta CSV); depois calcula concordância, kappa e precisão da anotação original | `marcas_caneta/revisao/revisar.html`, `amostra_revisao.csv`, `concordancia.json` | não | — |
 
 **Passo 5, partições das coortes.** A coorte de sensibilidade herda a divisão da principal, para que cada paciente caia na mesma partição nas duas:
 
@@ -154,7 +156,7 @@ $d = "dataset\PAD-UFES-20\derivados_analise_v1"
 **Observações:**
 - **Passo 12:** `--epocas-rotulos-aleatorios N` muda o número de épocas do modelo com rótulos embaralhados (padrão: o mesmo do treino final).
 - **Passo 14:** `--raio-central 56` exclui o disco central da máscara de tinta, porque a máscara completa capturava pixels violáceos da própria lesão. Sem a opção, roda a versão com máscara completa (`marcas_caneta/experimento/`). `--so-analise` refaz só o resumo e as figuras a partir do `por_imagem.csv` gravado. Na primeira execução, o script treina e guarda os modelos por fold em `experimentos_v1/modelos_fold_receita_final/`; nas seguintes, reaproveita-os.
-- **Anotação das marcas de caneta:** foi feita visualmente, imagem por imagem, e **não é gerada por script**. Vem em `anotacoes/anotacao_marcas_caneta.csv` (copiar conforme a seção 3). Os passos 14 e 15 dependem dela.
+- **Anotação das marcas de caneta:** foi feita visualmente, imagem por imagem, e **não é gerada por script**. Vem em `anotacoes/anotacao_marcas_caneta.csv` (copiar conforme a seção 3). Os passos 14 e 15 dependem dela. A anotação foi feita com auxílio de um assistente de IA e conferida pelo autor, às cegas, em 717 imagens (todas as anotadas com marca ou dúvida e 200 sorteadas entre as sem marca): 411 de 412 marcas confirmadas, 5,1% de marcas não anotadas entre as sem marca, kappa 0,96. As respostas estão em `anotacoes/conferencia_marcas_caneta.csv` e o resultado em `anotacoes/concordancia_marcas_caneta.json`; para recalcular, rode o passo 15 com `analisar anotacoes\conferencia_marcas_caneta.csv`.
 
 ---
 
@@ -279,7 +281,7 @@ Exemplo do utilitário:
 | `gradcam_pad_ufes.py` | Grad-CAM do modelo final, figuras por classe e testes de sanidade (randomização em cascata das camadas e modelo treinado com rótulos embaralhados; Spearman entre mapas). | `--epocas-rotulos-aleatorios` |
 | `artefato_sintetico_pad_ufes.py` | Viés com verdade conhecida: quadrado verde 20 × 20 num canto, correlacionado com NEV em níveis de *q*; mede a dependência real (inserir/remover o quadrado) e a atribuição do Grad-CAM e do IG no quadrado, agregada e por imagem (AUC). | — |
 | `marcas_caneta_pad_ufes.py` | Artefato real: estima a máscara de tinta (cor), apaga por *inpainting* (OpenCV) e mede a mudança da predição em modelos por fold, contra um placebo de mesma área; relaciona com a atribuição na tinta. | `--raio-central` (0), `--so-analise` |
-| `revisao_marcas_caneta_pad_ufes.py` | Conferência às cegas da anotação visual: `gerar` monta uma página HTML local com amostra embaralhada; `analisar <csv>` compara a revisão com a anotação (concordância, kappa, precisão). | `gerar [--n-nao 200]`, `analisar <csv>` |
+| `revisao_marcas_caneta_pad_ufes.py` | Conferência às cegas da anotação visual: `gerar` monta uma página HTML local com amostra embaralhada; `analisar <csv>` compara a revisão com a anotação (concordância, kappa, precisão). | `gerar [--n-sim 50 --n-duvida 50 --n-nao 50 --n-repetidas 15]`, `analisar <csv>` |
 
 ### NIH ChestX-ray14
 

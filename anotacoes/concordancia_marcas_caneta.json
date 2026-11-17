@@ -1,0 +1,64 @@
+{
+  "n_conferidas": 717,
+  "tabela": {
+    "duvida": {
+      "duvida": 7,
+      "nao": 5,
+      "sim": 0
+    },
+    "nao": {
+      "duvida": 30,
+      "nao": 185,
+      "sim": 1
+    },
+    "sim": {
+      "duvida": 68,
+      "nao": 10,
+      "sim": 411
+    }
+  },
+  "por_estrato": {
+    "sim": {
+      "n_decididas": 412,
+      "n_duvida_revisor": 0,
+      "fracao_com_marca": 0.9975728155339806,
+      "ic95": [
+        0.9863809185907174,
+        0.9995714248015742
+      ],
+      "total_na_base": 412
+    },
+    "duvida": {
+      "n_decididas": 98,
+      "n_duvida_revisor": 7,
+      "fracao_com_marca": 0.6938775510204082,
+      "ic95": [
+        0.5967537243906448,
+        0.7763747417764225
+      ],
+      "total_na_base": 105
+    },
+    "nao": {
+      "n_decididas": 195,
+      "n_duvida_revisor": 5,
+      "fracao_com_marca": 0.05128205128205128,
+      "ic95": [
+        0.028090438456355615,
+        0.09181203667963202
+      ],
+      "total_na_base": 1754
+    }
+  },
+  "estimativa_imagens_com_marca_na_base": 573.8058608058608,
+  "sim_vs_nao_sem_duvidas": {
+    "n": 607,
+    "concordancia": 0.9818780889621087,
+    "kappa_cohen": 0.9579340628878514
+  },
+  "consistencia_revisor": {
+    "pares": 0,
+    "respostas_iguais": 0,
+    "discordantes": []
+  },
+  "nota": "Amostra estratificada pelo rótulo original; a estimativa para a base pondera a fração com marca de cada estrato pelo total desse estrato na anotação original."
+}
