@@ -22,6 +22,7 @@ Em ambas, o modelo é uma **ResNet-18** pré-treinada no ImageNet. As explicaç�
 7. [Interromper e retomar](#7-interromper-e-retomar)
 8. [Travas do protocolo](#8-travas-do-protocolo)
 9. [Problemas comuns](#9-problemas-comuns)
+10. [Reprodução completa no Linux](#10-reprodução-completa-no-linux)
 
 ---
 
@@ -31,7 +32,7 @@ Em ambas, o modelo é uma **ResNet-18** pré-treinada no ImageNet. As explicaç�
 .
 ├── README.md
 ├── requirements.txt
-├── codigo/                     25 scripts Python (seção 6). Importam uns aos outros: mantenha todos juntos.
+├── codigo/                     27 scripts Python e um roteiro bash (seção 6). Importam uns aos outros: mantenha todos juntos.
 ├── protocolo/                  fichas de protocolo pré-registradas (cópias byte a byte, ver seção 8)
 │   ├── ficha_protocolo_experimental.md       PAD-UFES-20
 │   └── ficha_protocolo_experimental_nih.md   NIH ChestX-ray14
@@ -47,7 +48,7 @@ Em ambas, o modelo é uma **ResNet-18** pré-treinada no ImageNet. As explicaç�
 - Rodam **a partir da raiz do repositório**: `.venv\Scripts\python.exe codigo\<script>.py`.
 - Cada script define `ROOT` como a pasta acima de `codigo/` e lê/grava em `ROOT/dataset/...`. Os caminhos padrão funcionam sem argumentos se a estrutura da seção 3 for seguida.
 - Sementes fixas (42 por padrão; réplica com 47–51). Saídas em CSV/JSON (UTF-8) e figuras em PNG.
-- Comandos escritos para **PowerShell no Windows**. Em Linux/macOS, troque `.venv\Scripts\python.exe` por `.venv/bin/python` e `\` por `/`.
+- Comandos escritos para **PowerShell no Windows**. Em Linux/macOS, troque `.venv\Scripts\python.exe` por `.venv/bin/python` e `\` por `/`. As seções 2 e 3 trazem também os comandos para Linux, e a seção 10 descreve um roteiro que roda tudo em sequência.
 
 ---
 
@@ -77,6 +78,16 @@ Conferir a GPU:
 ```
 
 > Os comandos usam `.venv\Scripts\python.exe` diretamente, então não é preciso ativar o ambiente.
+
+No Linux, os mesmos passos:
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install "torch==2.14.1+cu132" "torchvision==0.29.1+cu132" --index-url https://download.pytorch.org/whl/cu132
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+```
 
 ---
 
@@ -112,6 +123,16 @@ New-Item -ItemType Directory -Force dataset\PAD-UFES-20\artefatos_protocolo, dat
 Copy-Item protocolo\ficha_protocolo_experimental.md     dataset\PAD-UFES-20\artefatos_protocolo\
 Copy-Item protocolo\ficha_protocolo_experimental_nih.md dataset\NIH-ChestXray14\
 Copy-Item anotacoes\anotacao_marcas_caneta.csv          dataset\PAD-UFES-20\derivados_analise_v1\marcas_caneta\
+```
+
+No Linux (a última linha só é necessária para o roteiro da seção 10, que roda o passo 15 com a conferência):
+
+```bash
+mkdir -p dataset/PAD-UFES-20/artefatos_protocolo dataset/PAD-UFES-20/derivados_analise_v1/marcas_caneta/revisao_entrada dataset/NIH-ChestXray14
+cp protocolo/ficha_protocolo_experimental.md     dataset/PAD-UFES-20/artefatos_protocolo/
+cp protocolo/ficha_protocolo_experimental_nih.md dataset/NIH-ChestXray14/
+cp anotacoes/anotacao_marcas_caneta.csv          dataset/PAD-UFES-20/derivados_analise_v1/marcas_caneta/
+cp anotacoes/conferencia_marcas_caneta.csv       dataset/PAD-UFES-20/derivados_analise_v1/marcas_caneta/revisao_entrada/revisao_marcas_caneta.csv
 ```
 
 ---
@@ -299,6 +320,14 @@ Exemplo do utilitário:
 | `sensibilidade_nih.py` | Análises de sensibilidade pré-registradas: TCAV com 100 CAVs aleatórios e IG com linha de base borrada. | `--so-analise` |
 | `controle_condicionado_nih.py` | Controle exploratório: recalcula o sinal H/M com mulheres e homens pareados pela probabilidade prevista, para separar o efeito do atalho do efeito da confiança do modelo. | — |
 
+### Números do DATASUS e reprodução
+
+| Script | Função | Argumentos |
+|---|---|---|
+| `numeros_datasus.py` | Números nacionais de derrame pleural (CID-10 J90, J91 e J86) citados na monografia: internações, óbitos hospitalares, custo e perfil no SIH/SUS e óbitos no SIM. Baixa os microdados públicos do FTP do DATASUS (sem cadastro) para `dataset/DATASUS/` e é retomável. Requer `datasus-dbc`. | `--anos-sih` (2024 2025), `--anos-sim` (2024) |
+| `reproduzir_linux.sh` | Roteiro bash que roda todos os passos das seções 4 e 5 e o DATASUS, em ordem, com log por passo; retoma do último passo concluído (seção 10). | `--lista` |
+| `comparar_reproducao.py` | Compara duas árvores de resultados (JSON e CSV): arquivos idênticos byte a byte e, nos demais, a maior diferença numérica por chave ou coluna, ignorando tempos e caminhos. | `REFERENCIA REPRODUCAO`, `--saida`, `--tol` (1e-6) |
+
 ---
 
 ## 7. Interromper e retomar
@@ -326,7 +355,7 @@ As proteções abaixo impedem que uma decisão seja tomada depois de vistos os r
 
 - **`treinar_pad_ufes.py final`** recusa refazer a predição do teste se `predicoes_teste.csv` existir. `--forcar` permite, e o JSON da execução registra `"forcado": true`.
 - **`treinar_nih_chestxray14.py piloto`** recusa rodar de novo. Reescolher E exigiria apagar `piloto/decisao_epocas.json` à mão, o que altera o protocolo.
-- **Fichas de protocolo** (`protocolo/`): congeladas antes dos treinos. Mudanças posteriores ficam numa seção "Ajustes após o congelamento", com data e justificativa, sem editar o texto acima dela. Conferência: `Get-FileHash <arquivo> -Algorithm SHA256`.
+- **Fichas de protocolo** (`protocolo/`): congeladas antes dos treinos. Mudanças posteriores ficam numa seção "Ajustes após o congelamento", com data e justificativa, sem editar o texto acima dela. Conferência: `Get-FileHash <arquivo> -Algorithm SHA256` (Windows) ou `sha256sum <arquivo>` (Linux).
 
 | Ficha | SHA-256 do arquivo neste repositório | Corresponde a |
 |---|---|---|
@@ -342,10 +371,34 @@ Hashes anteriores da ficha do NIH: congelamento original `50cdaf2604260dce9500c9
 | Sintoma | Causa provável e solução |
 |---|---|
 | `CUDA indisponível` / `torch.cuda.is_available()` = `False` | PyTorch instalado sem CUDA (pelo PyPI). Reinstale com o comando `--index-url .../cu132` da seção 2. |
-| `CUDA out of memory` | Outro processo usa a GPU (p. ex., treino e XAI ao mesmo tempo). Confira com `nvidia-smi`. |
+| `CUDA out of memory` | Outro processo usa a GPU (p. ex., treino e XAI ao mesmo tempo). Confira com `nvidia-smi`. No Linux, o driver não transborda para a RAM como no Windows; use `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` (o roteiro da seção 10 já define). |
+| TCAV muito lento no Linux (minutos por execução) | As bibliotecas numéricas abrem uma *thread* por núcleo cada uma e disputam a CPU. Defina `OPENBLAS_NUM_THREADS=4` e `OMP_NUM_THREADS=4` (o roteiro da seção 10 já define). |
 | `FileNotFoundError` em `dataset\...` | Comando rodado fora da raiz do repositório, passo anterior não executado ou arquivo da seção 3 não copiado. |
 | Acentos aparecem como `�` no terminal | Só exibição do console; os arquivos são UTF-8. Corrija com `$env:PYTHONIOENCODING = "utf-8"`. |
 | `preparar_cache_nih_chestxray14.py` acusa hash divergente | Pacote incompleto ou corrompido. Apague o ZIP indicado e baixe de novo (seção 5.1). |
 | `Execute a fase cv antes da fase final` / `Execute a fase piloto antes dos experimentos` | A ordem das tabelas não foi seguida. |
 | `ModuleNotFoundError: No module named 'treinar_pad_ufes'` (ou outro script) | Um script saiu de `codigo/`. Eles importam uns aos outros e precisam ficar na mesma pasta. |
 | `O piloto já foi executado` | Trava da seção 8. Os experimentos usam o E já gravado. |
+
+---
+
+## 10. Reprodução completa no Linux
+
+O roteiro `codigo/reproduzir_linux.sh` roda, em ordem, todos os passos das seções 4 e 5 e o `numeros_datasus.py`. Antes, baixe os dados (seções 4.1 e 5.1) e copie os arquivos da seção 3.
+
+```bash
+bash codigo/reproduzir_linux.sh --lista   # mostra os passos e quais já terminaram
+bash codigo/reproduzir_linux.sh           # roda tudo, retomando do último passo concluído
+```
+
+- Cada passo grava um log em `dataset/_reproducao/logs/` e, ao terminar sem erro, uma marca em `dataset/_reproducao/concluidos.txt`. O roteiro para no primeiro erro; rodar de novo retoma dali.
+- O roteiro define `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, `OPENBLAS_NUM_THREADS=4` e `OMP_NUM_THREADS=4` (seção 9). Nenhuma dessas variáveis muda os cálculos.
+- Tempo: cerca de 9 h numa RTX 3060 Ti, sem contar o download.
+
+Para comparar os resultados com os de outra execução:
+
+```bash
+.venv/bin/python codigo/comparar_reproducao.py <pasta_de_referencia> dataset --saida comparacao.md
+```
+
+**O que esperar.** Esta reprodução foi feita do zero, em outro sistema operacional e com outro driver de vídeo, mas com as mesmas versões de bibliotecas e a mesma GPU da execução original. Os dados preparados (auditorias, coortes, partições, conjuntos de treino de cada execução e números do DATASUS) saíram idênticos. Os modelos, não: o código fixa as sementes e o modo determinístico do cuDNN, mas não ativa `torch.use_deterministic_algorithms`, e o treino usa precisão mista. Com outro ambiente, a ordem das somas em ponto flutuante na GPU muda e a diferença se propaga pelo treino; a AUC de uma execução variou até 0,08. As conclusões de H1 a H3, a hipótese confirmatória da réplica e as do piloto se repetiram. A comparação completa está no Apêndice C da monografia.

@@ -111,6 +111,8 @@ def main() -> None:
         pd.DataFrame(rows).to_csv(out_path, index=False)
         print(name, {k: round(v, 4) for k, v in row.items() if isinstance(v, float) and "excesso" in k},
               "pareado n =", row["pareado_n_f"], "+", row["pareado_n_m"], flush=True)
+        del model, maps
+        torch.cuda.empty_cache()  # libera a reserva entre execuções (Linux); não muda resultados
 
     table = pd.DataFrame(rows)
     degenerate = (table["experimento"] == "B") & (table["q"] == 1.0)

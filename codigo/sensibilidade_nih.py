@@ -101,6 +101,8 @@ def compute(device) -> None:
         if name.startswith("B") and not square_path.exists():
             ig_square(name, model, context).to_csv(square_path, index=False)
         print(name, flush=True)
+        del model
+        torch.cuda.empty_cache()  # evita esgotar a GPU na passagem de A para B (Linux); não muda resultados
     sanity_path = OUT_DIR / "sanidade_ig_borrada.json"
     if not sanity_path.exists():
         sanity_path.write_text(json.dumps(sanity_blurred(context, device), ensure_ascii=False, indent=2),

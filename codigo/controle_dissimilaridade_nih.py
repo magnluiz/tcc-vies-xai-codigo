@@ -74,6 +74,12 @@ def main() -> None:
     table["excesso_gradcam"] = table["sexo_gradcam"] - table["aleatorio_gradcam"]
     table["excesso_ig"] = table["sexo_ig"] - table["aleatorio_ig"]
     for conjunto, suffix in xai.SUFFIXES.items():
+        # Antes da réplica treinada, os conjuntos "replica" e "combinado" ficam incompletos; o
+        # resumo deles só é gravado quando todas as execuções existem (rodar de novo depois).
+        faltam = set(xai.run_names(conjunto)) - set(table["execucao"])
+        if faltam:
+            print(conjunto, f"pulado: faltam {len(faltam)} execuções")
+            continue
         summary = summarize(table[table["execucao"].isin(xai.run_names(conjunto))])
         if conjunto == "replica":
             summary["hipotese_confirmatoria"] = confirmatory(summary)

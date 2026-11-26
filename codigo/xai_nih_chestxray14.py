@@ -307,6 +307,11 @@ def explain_all(context: Context, device, names: list[str]) -> None:
                                           encoding="utf-8")
         brief = {k: round(v, 3) for k, v in summary.items() if isinstance(v, float)}
         print(f"{name}: {brief}", flush=True)
+        # Devolve ao driver a memória reservada pela execução anterior. No Linux não há o
+        # transbordo para a RAM que o driver do Windows faz, e a passagem do experimento A para o
+        # B (que copia o teste inteiro para colar o quadrado) esgotava os 8 GB. Não muda resultados.
+        del model, summary, rows
+        torch.cuda.empty_cache()
 
 
 def rank_correlations(reference: np.ndarray, other: np.ndarray) -> np.ndarray:
